@@ -1,5 +1,5 @@
 from tensorflow import config, distribute
-from tensorflow.keras import layers, models
+from keras import layers, models
 
 from . import constants, custom_layers, utils
 

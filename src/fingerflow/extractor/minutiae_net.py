@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from tensorflow.keras import optimizers
+from keras import optimizers
 
 from . import constants, utils
 from .MinutiaeNet.CoarseNet import coarse_net_model, minutiae_net_utils, coarse_net_utils

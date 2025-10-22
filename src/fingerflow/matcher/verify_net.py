@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras import backend
+from keras import backend
 
 from .VerifyNet import verify_net_model, utils
 
