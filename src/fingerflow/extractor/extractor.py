@@ -1,16 +1,19 @@
+from typing import Any, Dict
+
 from .minutiae_net import MinutiaeNet
 from .classify_net import ClassifyNet
 from .core_net import CoreNet
 from . import utils
+from . import BaseExtractor
 
 
-class Extractor:
+class Extractor(BaseExtractor):
     def __init__(self, coarse_net_path, fine_net_path, classify_net_path, core_net_path):
         self.__extraction_module = MinutiaeNet(coarse_net_path, fine_net_path)
         self.__classification_module = ClassifyNet(classify_net_path)
         self.__core_detection_module = CoreNet(core_net_path)
 
-    def extract_minutiae(self, image_data):
+    def extract_minutiae(self, image_data: Any) -> Dict[str, Any]:
         preprocessed_image = utils.preprocess_image_data(image_data)
 
         extracted_points = self.__extraction_module.extract_minutiae_points(
