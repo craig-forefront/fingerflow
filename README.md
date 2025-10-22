@@ -16,18 +16,30 @@ FingerFlow supports GPU acceleration on [CUDA®-enabled graphic cards](https://d
 
 ## Software requirements
 
-- **Python 3.7 or newer**
+- **Python 3.9 or newer**
 - **CUDA** - for TensorFlow GPU acceleration (if missing, CPU will be used for computation)
+
+The refreshed 3.x line now targets contemporary data-science libraries, including:
+
+- [NumPy 1.25](https://numpy.org/) with SIMD-accelerated ufuncs and improved typing support.
+- [SciPy 1.11](https://scipy.org/) for the latest sparse and FFT routines.
+- [pandas 2.2](https://pandas.pydata.org/) and [scikit-learn 1.4](https://scikit-learn.org/) for modern dataframe analytics and model evaluation helpers.
+- [scikit-image 0.22](https://scikit-image.org/) and [matplotlib 3.8](https://matplotlib.org/) to back high-quality visualization utilities.
 
 ## Installation
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install FingerFlow. We reccomend to use it in **pip** or **anaconda** enviroment.
+Use the package manager [pip](https://pip.pypa.io/en/stable/) to install FingerFlow. We recommend using a dedicated **pip** or **conda** environment.
 
-Installation in anaconda enviroment:
+Base installation:
 
 ```bash
 pip install fingerflow
 ```
+
+### Optional extras
+
+- **PyTorch/ONNX backend** – `pip install "fingerflow[torch]"` installs Torch, TorchVision, and ONNX Runtime.
+- **Developer tooling** – `pip install "fingerflow[dev]"` installs the lint/test toolchain (PyLint, Ruff, and Pytest).
 
 ## Modules
 

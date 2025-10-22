@@ -102,8 +102,12 @@ class PreprocessPredictInputTest(unittest.TestCase):
              [5.0, 5.0, 5.0, 5.0, 1.4142135623730951, 2.8284271247461903, 4.242640687119285,
               5.656854249492381]])
 
-        result_mock = [np.array([mock_enhanced_minutiae]), np.array([mock_enhanced_minutiae])]
+        result_mock = (
+            mock_enhanced_minutiae[np.newaxis, ..., np.newaxis].astype(np.float32),
+            mock_enhanced_minutiae[np.newaxis, ..., np.newaxis].astype(np.float32),
+        )
 
-        result_output = utils.preprocess_predict_input(mock_minutiae, mock_minutiae)
+        anchor_batch, sample_batch = utils.preprocess_predict_input(mock_minutiae, mock_minutiae)
 
-        np.testing.assert_array_equal(result_output, result_mock)
+        np.testing.assert_array_equal(anchor_batch, result_mock[0])
+        np.testing.assert_array_equal(sample_batch, result_mock[1])

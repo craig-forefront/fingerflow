@@ -1,6 +1,76 @@
 [build-system]
 requires = [
-    "setuptools>=42",
-    "wheel"
+    "setuptools>=69",
+    "wheel",
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "fingerflow"
+version = "3.0.1"
+description = "FingerFlow"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Jakub Arendac", email = "jakub.arendac105@gmail.com"},
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "bitstring>=4.1",
+    "matplotlib>=3.8",
+    "numpy>=1.25,<2",
+    "opencv-python>=4.9",
+    "pandas>=2.2",
+    "scikit-image>=0.22",
+    "scikit-learn>=1.4",
+    "scipy>=1.11",
+    "tensorflow>=2.15",
+    "keras>=2.15,<3",
+]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/jakubarendac/fingerflow/issues"
+Homepage = "https://github.com/jakubarendac/fingerflow"
+
+[project.optional-dependencies]
+torch = [
+    "torch>=2.2",
+    "torchvision>=0.17",
+    "onnxruntime>=1.17",
+]
+dev = [
+    "pytest>=8.2",
+    "pylint>=3.2",
+    "ruff>=0.5",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "B",
+]
+ignore = [
+    "E203",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

@@ -98,13 +98,18 @@ def enhance_minutiae_points(minutiae):
 
 
 def preprocess_predict_input(anchor, sample):
-    """Provides preprocessed predict input.
+    """Provides preprocessed input tensors for inference.
 
     Arguments:
         anchor: anchor minutiae points
         sample: sample minutiae points
 
     Returns:
-        Array consumed by model.predict function
+        Tuple of NumPy arrays matching the VerifyNet input signature.
     """
-    return [np.array([enhance_minutiae_points(anchor)]), np.array([enhance_minutiae_points(sample)])]
+
+    def _expand_for_model(minutiae):
+        enhanced = enhance_minutiae_points(minutiae).astype(np.float32)
+        return enhanced[np.newaxis, ..., np.newaxis]
+
+    return _expand_for_model(anchor), _expand_for_model(sample)
