@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from tensorflow.keras import layers, initializers, models
+from keras import layers, initializers, models
 
 from . import constants
 

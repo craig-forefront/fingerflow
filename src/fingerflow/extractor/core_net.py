@@ -1,4 +1,4 @@
-from tensorflow.keras import backend
+from keras import backend
 
 from .CoreNet import core_net_model, utils
 
