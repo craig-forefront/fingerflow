@@ -31,8 +31,9 @@ class MinutiaeNet:
 
         image = np.reshape(image, [1, image.shape[0], image.shape[1], 1])
 
-        _, _, _, _, _, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out = self.__coarse_net.predict(
-            image)
+        coarse_outputs = self.__coarse_net(image, training=False)
+        (_, _, _, _, _, seg_out, mnt_o_out, mnt_w_out, mnt_h_out,
+         mnt_s_out) = [output.numpy() for output in coarse_outputs]
 
         # Use for output mask
         round_seg = np.round(np.squeeze(seg_out))
@@ -86,7 +87,7 @@ class MinutiaeNet:
                 patch_minu = utils.resize_minutiae_patch(patch_minu)
 
                 # Use soft decision: merge FineNet score with CoarseNet score
-                [is_minutiae_prob] = self.__fine_net.predict(patch_minu)
+                is_minutiae_prob = self.__fine_net(patch_minu, training=False).numpy()[0]
                 is_minutiae_prob = is_minutiae_prob[0]
 
                 tmp_mnt = mnt_nms[idx_minu, :].copy()

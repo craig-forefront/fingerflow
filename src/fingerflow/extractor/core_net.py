@@ -12,7 +12,7 @@ class CoreNet:
     def detect_fingerprint_core(self, raw_image_data):
         image_data = utils.preprocess_image_data(raw_image_data[:, :, ::-1])
 
-        prediction_output = self.__core_net.predict(image_data)
+        prediction_output = self.__core_net(image_data, training=False).numpy()
         detected_cores = utils.get_detection_data(raw_image_data[:, :, ::-1], prediction_output)
 
         return detected_cores

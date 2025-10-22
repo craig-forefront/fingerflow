@@ -17,7 +17,7 @@ class ClassifyNet:
     def classify_minutiae_patch(self, minutiae_patch):
         resized_minutiae_patch = utils.resize_minutiae_patch(minutiae_patch)
 
-        [minutiae_classes] = self.__classify_net.predict(resized_minutiae_patch)
+        minutiae_classes = self.__classify_net(resized_minutiae_patch, training=False).numpy()[0]
 
         numpy_minutiae_classes = np.array(minutiae_classes)
         minutiae_type = float(np.argmax(numpy_minutiae_classes))
