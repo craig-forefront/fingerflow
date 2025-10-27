@@ -169,34 +169,41 @@ def residual_block(x, filters1, filters2, activation='leaky'):
 
 
 def get_boxes(pred, anchors, grid_size, strides, xyscale):
-    # (batch_size, grid_size, grid_size, 3, 5+classes)
-    pred = tf.reshape(pred, (tf.shape(pred)[0], grid_size, grid_size, 3, 5 + constants.NUM_CLASSES))
+    # Keras 3 compatible: Wrap all TensorFlow operations in a Lambda layer
+    def decode_boxes(inputs):
+        pred_tensor = inputs
+        # (batch_size, grid_size, grid_size, 3, 5+classes)
+        pred_reshaped = tf.reshape(pred_tensor, (tf.shape(pred_tensor)[0], grid_size, grid_size, 3, 5 + constants.NUM_CLASSES))
 
-    # (?, 52, 52, 3, 2) (?, 52, 52, 3, 2) (?, 52, 52, 3, 1) (?, 52, 52, 3, 80)
-    box_xy, box_wh, obj_prob, class_prob = tf.split(pred, (2, 2, 1, constants.NUM_CLASSES), -1)
+        # (?, 52, 52, 3, 2) (?, 52, 52, 3, 2) (?, 52, 52, 3, 1) (?, 52, 52, 3, 80)
+        box_xy, box_wh, obj_prob, class_prob = tf.split(pred_reshaped, (2, 2, 1, constants.NUM_CLASSES), -1)
 
-    box_xy = tf.sigmoid(box_xy)  # (?, 52, 52, 3, 2)
-    obj_prob = tf.sigmoid(obj_prob)  # (?, 52, 52, 3, 1)
-    class_prob = tf.sigmoid(class_prob)  # (?, 52, 52, 3, 80)
-    pred_box_xywh = tf.concat((box_xy, box_wh), -1)  # (?, 52, 52, 3, 4)
+        box_xy = tf.sigmoid(box_xy)  # (?, 52, 52, 3, 2)
+        obj_prob = tf.sigmoid(obj_prob)  # (?, 52, 52, 3, 1)
+        class_prob = tf.sigmoid(class_prob)  # (?, 52, 52, 3, 80)
+        pred_box_xywh = tf.concat((box_xy, box_wh), -1)  # (?, 52, 52, 3, 4)
 
-    grid = tf.meshgrid(tf.range(grid_size), tf.range(grid_size))  # (52, 52) (52, 52)
-    grid = tf.expand_dims(tf.stack(grid, axis=-1), axis=2)  # (52, 52, 1, 2)
-    grid = tf.cast(grid, tf.float32)
+        grid = tf.meshgrid(tf.range(grid_size), tf.range(grid_size))  # (52, 52) (52, 52)
+        grid = tf.expand_dims(tf.stack(grid, axis=-1), axis=2)  # (52, 52, 1, 2)
+        grid = tf.cast(grid, tf.float32)
 
-    box_xy = ((box_xy * xyscale) - 0.5 * (xyscale - 1) + grid) * strides  # (?, 52, 52, 1, 4)
+        box_xy = ((box_xy * xyscale) - 0.5 * (xyscale - 1) + grid) * strides  # (?, 52, 52, 1, 4)
 
-    box_wh = tf.exp(box_wh) * anchors  # (?, 52, 52, 3, 2)
-    box_x1y1 = box_xy - box_wh / 2  # (?, 52, 52, 3, 2)
-    box_x2y2 = box_xy + box_wh / 2  # (?, 52, 52, 3, 2)
-    # pred_box_x1y1x2y2: absolute xy value
-    pred_box_x1y1x2y2 = tf.concat([box_x1y1, box_x2y2], -1)  # (?, 52, 52, 3, 4)
+        box_wh = tf.exp(box_wh) * anchors  # (?, 52, 52, 3, 2)
+        box_x1y1 = box_xy - box_wh / 2  # (?, 52, 52, 3, 2)
+        box_x2y2 = box_xy + box_wh / 2  # (?, 52, 52, 3, 2)
+        # pred_box_x1y1x2y2: absolute xy value
+        pred_box_x1y1x2y2 = tf.concat([box_x1y1, box_x2y2], -1)  # (?, 52, 52, 3, 4)
 
-    return pred_box_x1y1x2y2, obj_prob, class_prob, pred_box_xywh
+        return pred_box_x1y1x2y2, obj_prob, class_prob, pred_box_xywh
+
+    # Apply the decoding function using Lambda layer
+    return layers.Lambda(decode_boxes)(pred)
 
 
 def conv(x, filters, kernel_size, downsampling=False, activation='leaky', batch_norm=True):
-    def mish(x):
+    # Keras 3 compatible: Use Lambda layer for mish activation
+    def mish_activation(x):
         return x * tf.math.tanh(tf.math.softplus(x))
 
     if downsampling:
@@ -218,9 +225,9 @@ def conv(x, filters, kernel_size, downsampling=False, activation='leaky', batch_
     if batch_norm:
         x = layers.BatchNormalization()(x)
     if activation == 'mish':
-        x = mish(x)
+        x = layers.Lambda(mish_activation)(x)  # Keras 3: Wrap in Lambda layer
     elif activation == 'leaky':
-        x = layers.LeakyReLU(alpha=0.1)(x)
+        x = layers.LeakyReLU(negative_slope=0.1)(x)  # Keras 3: Use negative_slope instead of alpha
     return x
 
 
@@ -232,36 +239,42 @@ def nms(model_ouputs):
     :param input_shape: size of input image
     :return: nmsed_boxes, nmsed_scores, nmsed_classes, valid_detections
     """
-    bs = tf.shape(model_ouputs[0])[0]
-    boxes = tf.zeros((bs, 0, 4))
-    confidence = tf.zeros((bs, 0, 1))
-    class_probabilities = tf.zeros((bs, 0, constants.NUM_CLASSES))
+    # Keras 3 compatible: Wrap NMS operations in a Lambda layer
+    def apply_nms(inputs):
+        model_outputs = inputs
+        bs = tf.shape(model_outputs[0])[0]
+        boxes = tf.zeros((bs, 0, 4))
+        confidence = tf.zeros((bs, 0, 1))
+        class_probabilities = tf.zeros((bs, 0, constants.NUM_CLASSES))
 
-    for output_idx in range(0, len(model_ouputs), 4):
-        output_xy = model_ouputs[output_idx]
-        output_conf = model_ouputs[output_idx + 1]
-        output_classes = model_ouputs[output_idx + 2]
-        boxes = tf.concat([boxes, tf.reshape(output_xy, (bs, -1, 4))], 1)
-        confidence = tf.concat([confidence, tf.reshape(output_conf, (bs, -1, 1))], 1)
-        class_probabilities = tf.concat([class_probabilities, tf.reshape(
-            output_classes, (bs, -1, constants.NUM_CLASSES))], 1)
+        for output_idx in range(0, len(model_outputs), 4):
+            output_xy = model_outputs[output_idx]
+            output_conf = model_outputs[output_idx + 1]
+            output_classes = model_outputs[output_idx + 2]
+            boxes = tf.concat([boxes, tf.reshape(output_xy, (bs, -1, 4))], 1)
+            confidence = tf.concat([confidence, tf.reshape(output_conf, (bs, -1, 1))], 1)
+            class_probabilities = tf.concat([class_probabilities, tf.reshape(
+                output_classes, (bs, -1, constants.NUM_CLASSES))], 1)
 
-    scores = confidence * class_probabilities
-    boxes = tf.expand_dims(boxes, axis=-2)
-    boxes = boxes / constants.INPUT_SHAPE[0]  # box normalization: relative img size
-    print(f'nms iou: {constants.IOU_THRESHOLD} score: {constants.SCORE_THRESHOLD}')
-    (nmsed_boxes,      # [bs, max_detections, 4]
-     nmsed_scores,     # [bs, max_detections]
-     nmsed_classes,    # [bs, max_detections]
-     valid_detections  # [batch_size]
-     ) = tf.image.combined_non_max_suppression(
-        boxes=boxes,  # y1x1, y2x2 [0~1]
-        scores=scores,
-        max_output_size_per_class=100,
-        max_total_size=100,  # max_boxes: Maximum nmsed_boxes in a single img.
-        # iou_threshold: Minimum overlap that counts as a valid detection.
-        iou_threshold=constants.IOU_THRESHOLD,
-        # # Minimum confidence that counts as a valid detection.
-        score_threshold=constants.SCORE_THRESHOLD,
-    )
-    return nmsed_boxes, nmsed_scores, nmsed_classes, valid_detections
+        scores = confidence * class_probabilities
+        boxes = tf.expand_dims(boxes, axis=-2)
+        boxes = boxes / constants.INPUT_SHAPE[0]  # box normalization: relative img size
+        print(f'nms iou: {constants.IOU_THRESHOLD} score: {constants.SCORE_THRESHOLD}')
+        (nmsed_boxes,      # [bs, max_detections, 4]
+         nmsed_scores,     # [bs, max_detections]
+         nmsed_classes,    # [bs, max_detections]
+         valid_detections  # [batch_size]
+         ) = tf.image.combined_non_max_suppression(
+            boxes=boxes,  # y1x1, y2x2 [0~1]
+            scores=scores,
+            max_output_size_per_class=100,
+            max_total_size=100,  # max_boxes: Maximum nmsed_boxes in a single img.
+            # iou_threshold: Minimum overlap that counts as a valid detection.
+            iou_threshold=constants.IOU_THRESHOLD,
+            # # Minimum confidence that counts as a valid detection.
+            score_threshold=constants.SCORE_THRESHOLD,
+        )
+        return nmsed_boxes, nmsed_scores, nmsed_classes, valid_detections
+
+    # Apply NMS using Lambda layer
+    return layers.Lambda(apply_nms)(model_ouputs)

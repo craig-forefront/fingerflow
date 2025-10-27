@@ -19,7 +19,7 @@ class MinutiaeNet:
                                                             input_shape=constants.INPUT_SHAPE)
 
         self.__fine_net.compile(loss='categorical_crossentropy',
-                                optimizer=optimizers.Adam(learning_rate=0),
+                                optimizer=optimizers.Adam(learning_rate=0.0),  # Keras 3 requires float
                                 metrics=['accuracy'])
 
     # TODO : refactor - too long function

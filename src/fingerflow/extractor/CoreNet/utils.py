@@ -19,7 +19,9 @@ def load_darknet_weights(model, weights_file_path):  # pylint: disable=too-many-
             conv_layer = model.get_layer(conv_layer_name)
             filters = conv_layer.filters
             kernel_size = conv_layer.kernel_size[0]
-            input_dims = conv_layer.input_shape[-1]
+            # Keras 3 compatible: Use weights shape instead of input_shape
+            # Conv2D weights shape is (kernel_h, kernel_w, input_channels, output_channels)
+            input_dims = conv_layer.kernel.shape[2]
 
             if conv_idx not in conv_output_idxs:
                 # darknet bn layer weights: [beta, gamma, mean, variance]
@@ -34,7 +36,8 @@ def load_darknet_weights(model, weights_file_path):  # pylint: disable=too-many-
             # darknet shape: (out_dim, input_dims, height, width)
             # tf shape: (height, width, input_dims, out_dim)
             conv_shape = (filters, input_dims, kernel_size, kernel_size)
-            conv_weights = np.fromfile(weights_file, dtype=np.float32, count=np.product(conv_shape))
+            # NumPy 2.0 compatible: np.product -> np.prod
+            conv_weights = np.fromfile(weights_file, dtype=np.float32, count=np.prod(conv_shape))
             conv_weights = conv_weights.reshape(conv_shape).transpose([2, 3, 1, 0])
 
             if conv_idx not in conv_output_idxs:
