@@ -11,7 +11,7 @@ class ClassifyNet:
         self.__classify_net = classify_net_model.get_classify_net_model(classify_net_path)
 
         self.__classify_net.compile(loss='categorical_crossentropy',
-                                    optimizer=optimizers.Adam(learning_rate=0),
+                                    optimizer=optimizers.Adam(learning_rate=0.0),  # Keras 3 requires float
                                     metrics=['accuracy'])
 
     def classify_minutiae_patch(self, minutiae_patch):
